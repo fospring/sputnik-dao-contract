@@ -51,50 +51,6 @@ pub(crate) fn internal_set_factory_info(factory_info: &FactoryInfo) {
     );
 }
 
-/// Function that receives new contract, updates and calls migration.
-/// Two options who call it:
-///  - current account, in case of fetching contract code from factory;
-///  - factory, if this contract allows to factory-update;
-#[no_mangle]
-pub fn update() {
-    env::setup_panic_hook();
-
-    let factory_info = internal_get_factory_info();
-    let current_id = env::current_account_id();
-    assert!(
-        env::predecessor_account_id() == current_id
-            || (env::predecessor_account_id() == factory_info.factory_id
-                && factory_info.auto_update),
-        "{}",
-        ERR_MUST_BE_SELF_OR_FACTORY
-    );
-
-    let is_callback = env::predecessor_account_id() == current_id;
-    let input;
-    if is_callback {
-        input = match env::promise_result(0) {
-            PromiseResult::Successful(data) => data,
-            _ => env::panic_str("ERR_NO_RESULT"),
-        };
-    } else {
-        input = env::input().expect("ERR_NO_INPUT");
-    };
-
-    let promise_id = env::promise_batch_create(&current_id);
-    // Deploy the contract code.
-    env::promise_batch_action_deploy_contract(promise_id, &input);
-    // Call promise to migrate the state.
-    // Batched together to fail upgrade if migration fails.
-    env::promise_batch_action_function_call(
-        promise_id,
-        "migrate",
-        &[],
-        NO_DEPOSIT,
-        env::prepaid_gas() - env::used_gas() - UPDATE_GAS_LEFTOVER,
-    );
-    env::promise_return(promise_id);
-}
-
 pub(crate) fn upgrade_using_factory(code_hash: Base58CryptoHash) {
     let account_id = get_default_factory_id();
     // Create a promise toward the factory.
@@ -110,31 +66,4 @@ pub(crate) fn upgrade_using_factory(code_hash: Base58CryptoHash) {
         env::prepaid_gas() - env::used_gas() - FACTORY_UPDATE_GAS_LEFTOVER,
     );
     env::promise_return(promise_id);
-}
-
-#[allow(dead_code)]
-pub(crate) fn upgrade_self(hash: &[u8]) {
-    let current_id = env::current_account_id();
-    let input = env::storage_read(hash).expect("ERR_NO_HASH");
-    let promise_id = env::promise_batch_create(&current_id);
-    env::promise_batch_action_deploy_contract(promise_id, &input);
-    env::promise_batch_action_function_call(
-        promise_id,
-        "migrate",
-        &[],
-        NO_DEPOSIT,
-        env::prepaid_gas() - env::used_gas() - GAS_FOR_UPGRADE_SELF_DEPLOY,
-    );
-}
-
-pub(crate) fn upgrade_remote(receiver_id: &AccountId, method_name: &str, hash: &[u8]) {
-    let input = env::storage_read(hash).expect("ERR_NO_HASH");
-    let promise_id = env::promise_batch_create(receiver_id);
-    env::promise_batch_action_function_call(
-        promise_id,
-        method_name,
-        &input,
-        NO_DEPOSIT,
-        env::prepaid_gas() - env::used_gas() - GAS_FOR_UPGRADE_REMOTE_DEPLOY,
-    );
 }
