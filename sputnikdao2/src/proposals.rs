@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use near_contract_standards::fungible_token::core_impl::ext_fungible_token;
+// use near_contract_standards::fungible_token::core_impl::ext_fungible_token;
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
 use near_sdk::json_types::{Base64VecU8, U128, U64};
 use near_sdk::{log, AccountId, Balance, Gas, PromiseOrValue};
