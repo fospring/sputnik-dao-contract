@@ -21,6 +21,6 @@ mod bounties;
 // mod delegation;
 mod policy;
 mod proposals;
-mod types;
+pub mod types;
 mod upgrade;
 // pub mod views;
