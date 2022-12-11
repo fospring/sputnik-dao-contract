@@ -17,10 +17,10 @@ pub use crate::policy::{
 use crate::upgrade::{internal_get_factory_info, internal_set_factory_info, FactoryInfo};
 // pub use crate::views::{BountyOutput, ProposalOutput};
 
-mod bounties;
+pub mod bounties;
 // mod delegation;
-mod policy;
-mod proposals;
+pub mod policy;
+pub mod proposals;
 pub mod types;
-mod upgrade;
+pub mod upgrade;
 // pub mod views;
